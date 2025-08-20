@@ -72,3 +72,10 @@ Output of convert_DAC_LR_dB() function:
   129 = convert_DAC_LR_dB(-63.5)
   129 = convert_DAC_LR_dB(-64.0)
 """
+
+# This conversion math matches Page0Registers._set_channel_volume() in
+# Adafruit_CircuitPython_TLV320/adafruit_tlv320.py.
+# Page0Registers._set_channel_volume() is called by:
+#  - TLV320DAC3100.__init__()
+#  - Page0Registers.left_dac_channel_volume(self, db: float)
+#  - Page0Registers.right_dac_channel_volume(self, db: float)
