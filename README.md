@@ -75,5 +75,5 @@ appropriate for consumer line-level and headphone level output.
    modern Macs with headphone output jacks adapt to the impedance of connected
    headphones. For low impedance headphones (under 150 ohms), the output level
    is up to 1.25V RMS. For high impedance headphones of 150 to 1k ohms, the
-   output level is up to 3V RMS. Generally, small cheap headphones are low
-   impedance, and large over-the-ear headphones are high impedance.
+   output level is up to 3V RMS. Generally, cheap headphones are low impedance.
+   Fancy audiophile headphones may be high impedance.
