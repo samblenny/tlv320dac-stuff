@@ -20,7 +20,8 @@ Links:
 
 ## Math with Decibels (dB)
 
-This is from Art of Electronics, third edition, section 1.3.2.
+These formulas for power and amplitude dB ratios are from Art of Electronics,
+third edition, section 1.3.2.
 
 Formula for ratio between the **power** (Watts) of two signals (P1 and P2) in
 decibels (dB):
@@ -36,10 +37,11 @@ in decibels (dB):
 dB = 20 * log10(A2 / A1)
 ```
 
-Formula to convert dBV to peak voltage (dBV reference value is 1V):
+By way of some basic algebra, we can derive a formula to convert dBV to peak
+voltage (dBV reference value is 1V). Since we're using dBV, we know that A1 is
+1V. Also, pow(10, n) is the inverse function of log10(n).
 
-Here we use algebra to solve amplitude formula for A2 as a function of dB. Note
-that A1 is 1V and pow(10, n) is the inverse function of log10(n).
+These are the steps to solve the amplitude formula for A2 as a function of dB:
 1. `dB = 20 * log10(A2 / A1)`
 2. `dB = 20 * log10(A2 / 1)`
 3. `dB = 20 * log10(A2)`
@@ -47,7 +49,7 @@ that A1 is 1V and pow(10, n) is the inverse function of log10(n).
 5. `pow(10, dB / 20) = A2`
 6. `A2 = pow(10, dB / 20)`
 
-For example,
+For example:
 ```python
 >>> def volts(dBV):
 ...     return pow(10, dBV / 20)
