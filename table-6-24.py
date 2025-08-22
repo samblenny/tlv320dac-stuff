@@ -14,7 +14,7 @@ The table values make a non-linear piecewise function:
 3. At the end, there's a constant line segment for -78.3 dB
 """
 
-# (Analog Gain dB, Register Value for bits D6-D0)
+# (Register Value for bits D6-D0, Analog Gain dB)
 table_6_24 = (
     (  0,   0  ),  # Begin linear segment: round((-1.99 * dB) - 0.2)
     (  1,  -0.5),
