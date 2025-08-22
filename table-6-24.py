@@ -15,7 +15,8 @@ The table values make a non-linear piecewise function:
 3. At the end, there's a constant line segment for -78.3 dB
 """
 
-# (Register Value for bits D6-D0, Analog Gain dB)
+# These values are transcribed from TLV320DAC3100 datasheet Table 6-24.
+# format: (Register Value for bits D6-D0, Analog Gain dB)
 table_6_24 = (
     (  0,   0  ),  # Begin linear segment: round((-1.99 * dB) - 0.2)
     (  1,  -0.5),
@@ -254,6 +255,19 @@ for (table_val, table_dB) in table_6_24:
     print(f"{table_val:3d}       {t_dB:>5}    {c_dB:>5}      {diff:>3}")
 
 
+# The output below is from running the two test loops above.
+#
+# The final columns are comparing expected values from the table to computed
+# values convert_dB_to_uint7_table_6_24() and convert_unit7_to_dB_table_6_24().
+# A difference of 0 means my computed values match the table.
+#
+# Note that the values 118-127 in the dB to register-value direction
+# have a non-zero difference. This is expected since the table is giving us a
+# [multivalued function](https://en.wikipedia.org/wiki/Multivalued_function),
+# because of the final constant segment where register values 117-127 all map
+# to a single gain value (-78.3 dB). The difference is okay because we're using
+# an effectively equivalent single-valued function to compute register-value
+# as a function of gain dB.
 """
 $ python3 table-6-24.py
  Gain_dB  Table    Computed  Reg Val
@@ -389,7 +403,7 @@ $ python3 table-6-24.py
 
  Table    Table    Computed  Gain_dB
  Reg Val  Gain_dB  Gain_dB   Diff
-  0         0.0     -0.0      -0.0
+  0         0.0      0.0      0.0
   1        -0.5     -0.5      0.0
   2        -1.0     -1.0      0.0
   3        -1.5     -1.5      0.0
