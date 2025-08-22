@@ -9,8 +9,9 @@ register values suitable for storing in analog volume control registers:
 - P1/R38=0x26 Left  Analog Volume to SPK (range 0 dB to -78 dB)
 
 The table values make a non-linear piecewise function:
-1.   0   dB to -52.7 dB is a straight line: reg val = round((-1.99 * dB) - 0.2)
-2. -52.7 dB to -78   dB looks like an exponential or parabolic curve
+1. 0 dB to -52.7 dB is almost a straight line, but it has some jitter on
+   the order of ±0.3. Approximate formula: reg val = round((-1.99 * dB) - 0.2)
+2. -52.7 dB to -78 dB looks like an exponential or parabolic curve
 3. At the end, there's a constant line segment for -78.3 dB
 """
 
