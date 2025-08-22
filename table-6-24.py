@@ -257,9 +257,9 @@ for (table_val, table_dB) in table_6_24:
 
 # The output below is from running the two test loops above.
 #
-# The final columns are comparing expected values from the table to computed
-# values convert_dB_to_uint7_table_6_24() and convert_unit7_to_dB_table_6_24().
-# A difference of 0 means my computed values match the table.
+# The final columns are comparing expected values from the table to values
+# from convert_dB_to_uint7_table_6_24() and convert_unit7_to_dB_table_6_24().
+# A difference of 0 means the computed values match the table.
 #
 # Note that the values 118-127 in the dB to register-value direction
 # have a non-zero difference. This is expected since the table is giving us a
