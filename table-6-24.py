@@ -3,7 +3,7 @@
 """
 In the TLV320DAC datasheet, Table 6-24, "Analog Volume Control for Headphone
 and Speaker Outputs" lists a lookup table to convert from analog gain dB to
-register values suitabe for storing in analog volume control registers:
+register values suitable for storing in analog volume control registers:
 - P1/R36=0x24 Left  Analog Volume to HPL (range 0 dB to -78 dB)
 - P1/R37=0x25 Right Analog Volume to HPR (range 0 dB to -78 dB)
 - P1/R38=0x26 Left  Analog Volume to SPK (range 0 dB to -78 dB)
@@ -147,49 +147,115 @@ table_6_24 = (
 )
 
 
-def approx_reg_val(dB):
+def convert_dB_to_uint7_table_6_24(dB):
+    """
+    Convert analog gain dB to 7-bit unsigned int to match datasheet Table 6-24.
+    Valid gain dB range is -78.3 dB to 0 dB.
+    """
     if dB > 0:
-        return 0
-    elif dB >= -52.7:
+        raise ValueError()
+    elif -52.7 <= dB <= 0:
+        # This segment is approximately a line, but the table values have
+        # jitter on the order of ±0.3 away from from a straight line. By using
+        # round(), we can pretend like this segment is straight. Note that
+        # round() is not invertible. So, to invert this function, we will need
+        # to use a different approach to get from uint7 register value to dB.
         return round((-1.99 * dB) - 0.2)
-    elif dB >= -53.7 - 0.2:
+    elif -53.7 <= dB:
+        # This is the beginning of the weird curved segment. I wasn't able to
+        # find a good formula to fit this curve, and there aren't many points.
+        # We'll use a lookup table built from elif comparisons because dB is
+        # floating point.
         return 106
-    elif dB >= -54.2 - 0.2:
+    elif -54.2 <= dB:
         return 107
-    elif dB >= -55.3 - 0.2:
+    elif -55.3 <= dB:
         return 108
-    elif dB >= -56.7 - 0.2:
+    elif -56.7 <= dB:
         return 109
-    elif dB >= -58.3 - 0.2:
+    elif -58.3 <= dB:
         return 110
-    elif dB >= -60.2 - 0.2:
+    elif -60.2 <= dB:
         return 111
-    elif dB >= -62.7 - 0.2:
+    elif -62.7 <= dB:
         return 112
-    elif dB >= -64.3 - 0.2:
+    elif -64.3 <= dB:
         return 113
-    elif dB >= -66.2 - 0.2:
+    elif -66.2 <= dB:
         return 114
-    elif dB >= -68.7 - 0.2:
+    elif -68.7 <= dB:
         return 115
-    elif dB >= -72.2 - 0.2:
+    elif -72.2 <= dB:
         return 116
-    else:
+    elif -78.3 <= dB:
+        # Final segment is constant. Table 6-24 says that register values
+        # 117-127 are all -78.3 dB. Because we need to compute a single value
+        # for the register as a function of the dB argument, we will pick 117.
         return 117
+    else:
+        raise ValueError()
+
+def convert_unit7_to_dB_table_6_24(u7):
+    """
+    Convert 7-bit unsigned int to analog gain to match datasheet Table 6-24.
+    Valid values for u7 are integers in range 0 to 127.
+    """
+    if (u7 < 0) or (not isinstance(u7, int)):
+        raise ValueError()
+    if 0 == u7:
+        return 0
+    elif 0 < u7 <= 35:
+        # First segment is a well behaved straight line
+        return u7 / -2
+    elif (36 <= u7 <= 69) or (u7 == 84):
+        # This is the first of several special cases to compensate for jitter
+        # in the middle segment
+        return (u7 / -2) - 0.1
+    elif u7 in (87, 88, 89, 91, 98, 100, 103):
+        return (u7 / -2) - 0.3
+    elif u7 in (94, 95, 102):
+        return (u7 / -2) - 0.4
+    elif u7 in (99, 101):
+        return (u7 / -2) - 0.5
+    elif 70 <= u7 <= 105:
+        # For the remaining well-behaved values in the middle segment, use a
+        # linear formula
+        return (u7 / -2) - 0.2
+    elif 106 <= u7 <= 116:
+        # Next to last segment is a weird curve, so use a lookup table
+        return (-53.7, -54.2, -55.3, -56.7, -58.3, -60.2, -62.7, -64.3,
+            -66.2, -68.7, -72.2)[u7 - 106]
+    elif 117 <= u7 <= 127:
+        # Final segment is constant
+        return -78.3
+    else:
+        raise ValueError()
 
 
-print(" Gain_dB  Table    Approx   Reg Val")
+# Test dB to uint7 conversion function by comparing to values from the table
+print(" Gain_dB  Table    Computed  Reg Val")
 print("          Reg Val  Reg Val   Diff")
 for (table_val, table_dB) in table_6_24:
-    approx = approx_reg_val(table_dB)
+    uint7 = convert_dB_to_uint7_table_6_24(table_dB)
     dB_str = str("%.1f" % table_dB)
-    diff = str(approx - table_val)
-    print(f"{dB_str:>5} dB     {table_val:3d}    {approx:3d}      {diff:>3}")
+    diff = str(uint7 - table_val)
+    print(f"{dB_str:>5} dB     {table_val:3d}    {uint7:3d}      {diff:>3}")
+print()
+
+# Test uint7 to dB conversion function by comparing to values from the table
+print(" Table    Table    Computed  Gain_dB")
+print(" Reg Val  Gain_dB  Gain_dB   Diff")
+for (table_val, table_dB) in table_6_24:
+    computed_dB = convert_unit7_to_dB_table_6_24(table_val)
+    t_dB = str("%.1f" % table_dB)
+    c_dB = str("%.1f" % computed_dB)
+    diff = str("%.1f" % (computed_dB - table_dB))
+    print(f"{table_val:3d}       {t_dB:>5}    {c_dB:>5}      {diff:>3}")
 
 
 """
 $ python3 table-6-24.py
- Gain_dB  Table    Approx   Reg Val
+ Gain_dB  Table    Computed  Reg Val
           Reg Val  Reg Val   Diff
   0.0 dB       0      0        0
  -0.5 dB       1      1        0
@@ -319,4 +385,135 @@ $ python3 table-6-24.py
 -78.3 dB     125    117       -8
 -78.3 dB     126    117       -9
 -78.3 dB     127    117      -10
+
+ Table    Table    Computed  Gain_dB
+ Reg Val  Gain_dB  Gain_dB   Diff
+  0         0.0     -0.0      -0.0
+  1        -0.5     -0.5      0.0
+  2        -1.0     -1.0      0.0
+  3        -1.5     -1.5      0.0
+  4        -2.0     -2.0      0.0
+  5        -2.5     -2.5      0.0
+  6        -3.0     -3.0      0.0
+  7        -3.5     -3.5      0.0
+  8        -4.0     -4.0      0.0
+  9        -4.5     -4.5      0.0
+ 10        -5.0     -5.0      0.0
+ 11        -5.5     -5.5      0.0
+ 12        -6.0     -6.0      0.0
+ 13        -6.5     -6.5      0.0
+ 14        -7.0     -7.0      0.0
+ 15        -7.5     -7.5      0.0
+ 16        -8.0     -8.0      0.0
+ 17        -8.5     -8.5      0.0
+ 18        -9.0     -9.0      0.0
+ 19        -9.5     -9.5      0.0
+ 20       -10.0    -10.0      0.0
+ 21       -10.5    -10.5      0.0
+ 22       -11.0    -11.0      0.0
+ 23       -11.5    -11.5      0.0
+ 24       -12.0    -12.0      0.0
+ 25       -12.5    -12.5      0.0
+ 26       -13.0    -13.0      0.0
+ 27       -13.5    -13.5      0.0
+ 28       -14.0    -14.0      0.0
+ 29       -14.5    -14.5      0.0
+ 30       -15.0    -15.0      0.0
+ 31       -15.5    -15.5      0.0
+ 32       -16.0    -16.0      0.0
+ 33       -16.5    -16.5      0.0
+ 34       -17.0    -17.0      0.0
+ 35       -17.5    -17.5      0.0
+ 36       -18.1    -18.1      0.0
+ 37       -18.6    -18.6      0.0
+ 38       -19.1    -19.1      0.0
+ 39       -19.6    -19.6      0.0
+ 40       -20.1    -20.1      0.0
+ 41       -20.6    -20.6      0.0
+ 42       -21.1    -21.1      0.0
+ 43       -21.6    -21.6      0.0
+ 44       -22.1    -22.1      0.0
+ 45       -22.6    -22.6      0.0
+ 46       -23.1    -23.1      0.0
+ 47       -23.6    -23.6      0.0
+ 48       -24.1    -24.1      0.0
+ 49       -24.6    -24.6      0.0
+ 50       -25.1    -25.1      0.0
+ 51       -25.6    -25.6      0.0
+ 52       -26.1    -26.1      0.0
+ 53       -26.6    -26.6      0.0
+ 54       -27.1    -27.1      0.0
+ 55       -27.6    -27.6      0.0
+ 56       -28.1    -28.1      0.0
+ 57       -28.6    -28.6      0.0
+ 58       -29.1    -29.1      0.0
+ 59       -29.6    -29.6      0.0
+ 60       -30.1    -30.1      0.0
+ 61       -30.6    -30.6      0.0
+ 62       -31.1    -31.1      0.0
+ 63       -31.6    -31.6      0.0
+ 64       -32.1    -32.1      0.0
+ 65       -32.6    -32.6      0.0
+ 66       -33.1    -33.1      0.0
+ 67       -33.6    -33.6      0.0
+ 68       -34.1    -34.1      0.0
+ 69       -34.6    -34.6      0.0
+ 70       -35.2    -35.2      0.0
+ 71       -35.7    -35.7      0.0
+ 72       -36.2    -36.2      0.0
+ 73       -36.7    -36.7      0.0
+ 74       -37.2    -37.2      0.0
+ 75       -37.7    -37.7      0.0
+ 76       -38.2    -38.2      0.0
+ 77       -38.7    -38.7      0.0
+ 78       -39.2    -39.2      0.0
+ 79       -39.7    -39.7      0.0
+ 80       -40.2    -40.2      0.0
+ 81       -40.7    -40.7      0.0
+ 82       -41.2    -41.2      0.0
+ 83       -41.7    -41.7      0.0
+ 84       -42.1    -42.1      0.0
+ 85       -42.7    -42.7      0.0
+ 86       -43.2    -43.2      0.0
+ 87       -43.8    -43.8      0.0
+ 88       -44.3    -44.3      0.0
+ 89       -44.8    -44.8      0.0
+ 90       -45.2    -45.2      0.0
+ 91       -45.8    -45.8      0.0
+ 92       -46.2    -46.2      0.0
+ 93       -46.7    -46.7      0.0
+ 94       -47.4    -47.4      0.0
+ 95       -47.9    -47.9      0.0
+ 96       -48.2    -48.2      0.0
+ 97       -48.7    -48.7      0.0
+ 98       -49.3    -49.3      0.0
+ 99       -50.0    -50.0      0.0
+100       -50.3    -50.3      0.0
+101       -51.0    -51.0      0.0
+102       -51.4    -51.4      0.0
+103       -51.8    -51.8      0.0
+104       -52.2    -52.2      0.0
+105       -52.7    -52.7      0.0
+106       -53.7    -53.7      0.0
+107       -54.2    -54.2      0.0
+108       -55.3    -55.3      0.0
+109       -56.7    -56.7      0.0
+110       -58.3    -58.3      0.0
+111       -60.2    -60.2      0.0
+112       -62.7    -62.7      0.0
+113       -64.3    -64.3      0.0
+114       -66.2    -66.2      0.0
+115       -68.7    -68.7      0.0
+116       -72.2    -72.2      0.0
+117       -78.3    -78.3      0.0
+118       -78.3    -78.3      0.0
+119       -78.3    -78.3      0.0
+120       -78.3    -78.3      0.0
+121       -78.3    -78.3      0.0
+122       -78.3    -78.3      0.0
+123       -78.3    -78.3      0.0
+124       -78.3    -78.3      0.0
+125       -78.3    -78.3      0.0
+126       -78.3    -78.3      0.0
+127       -78.3    -78.3      0.0
 """
