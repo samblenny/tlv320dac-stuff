@@ -197,7 +197,7 @@ def convert_dB_to_uint7_table_6_24(dB):
     else:
         raise ValueError()
 
-def convert_unit7_to_dB_table_6_24(u7):
+def convert_uint7_to_dB_table_6_24(u7):
     """
     Convert 7-bit unsigned int to analog gain to match datasheet Table 6-24.
     Valid values for u7 are integers in range 0 to 127.
@@ -248,7 +248,7 @@ print()
 print(" Table    Table    Computed  Gain_dB")
 print(" Reg Val  Gain_dB  Gain_dB   Diff")
 for (table_val, table_dB) in table_6_24:
-    computed_dB = convert_unit7_to_dB_table_6_24(table_val)
+    computed_dB = convert_uint7_to_dB_table_6_24(table_val)
     t_dB = str("%.1f" % table_dB)
     c_dB = str("%.1f" % computed_dB)
     diff = str("%.1f" % (computed_dB - table_dB))
