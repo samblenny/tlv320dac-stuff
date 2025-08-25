@@ -35,6 +35,15 @@ HV_MAX = 0
 HG_MIN = 0
 HG_MAX = 9
 
+# Speaker volume limits
+SV_MIN = -78.3
+SV_MAX = 0
+
+# Speaker amp gain limits
+SG_MIN = 6
+SG_MAX = 24
+SG_STEP = 6
+
 
 def init_dac_audio_synth(i2c):
     """Configure TLV320 I2S DAC for audio output and make a Synthesizer.
@@ -52,7 +61,7 @@ def init_dac_audio_synth(i2c):
     # 2. Configure sample rate, bit depth, and output port
     dac = TLV320DAC3100(i2c)
     dac.configure_clocks(sample_rate=SAMPLE_RATE, bit_depth=16)
-    dac.speaker_output = False
+    dac.speaker_output = True
     dac.headphone_output = True
     # 4. Initialize I2S for Fruit Jam rev D
     audio = I2SOut(bit_clock=I2S_BCLK, word_select=I2S_WS, data=I2S_DIN)
@@ -80,9 +89,24 @@ def main():
     dv = dac.dac_volume           # default DAC volume
     hv = dac.headphone_volume     # default headphone analog volume
     hg = dac.headphone_left_gain  # default headphone amp gain
+    sv = dac.speaker_volume       # default speaker analog volume
+    sg = dac.speaker_gain         # default speaker amp gain
     note = 60
     synth.press(note)
     # Check for unbuffered keystroke input on the USB serial console
+    print("""
+=== TLV320DAC Volume Tester ===
+
+Controls:
+ q/z: dac_volume +/- 1
+ w/x: headphone_volume +/- 1
+ e/c: headphone_left_gain headphone_right_gain +/- 1
+ r/v: speaker_volume +/- 1
+ t/b: speaker_gain +/- 6
+ space: toggle speaker_output (amp power), this will reset volume & gain
+
+For less headphone noise, turn off the speaker amp (spacebar)
+""")
     while True:
         time.sleep(0.01)
         if supervisor.runtime.serial_bytes_available:
@@ -120,6 +144,32 @@ def main():
                     dac.headphone_left_gain = hg
                     dac.headphone_right_gain = hg
                     print(f"hg = {hg:.1f} ({dac.headphone_left_gain})")
+
+                elif c == 'r':
+                    # R = Speaker Volume UP
+                    sv = min(SV_MAX, max(SV_MIN, sv + 1))
+                    dac.speaker_volume = sv
+                    print(f"sv = {sv:.1f} ({dac.speaker_volume:.1f})")
+                elif c == 'v':
+                    # V = Speaker Volume DOWN
+                    sv = min(SV_MAX, max(SV_MIN, sv - 1))
+                    dac.speaker_volume = sv
+                    print(f"sv = {sv:.1f} ({dac.speaker_volume:.1f})")
+                elif c == 't':
+                    # T = Speaker Amp Gain UP
+                    sg = min(SG_MAX, max(SG_MIN, sg + SG_STEP))
+                    dac.speaker_gain = sg
+                    print(f"sg = {sg:.1f} ({dac.speaker_gain})")
+                elif c == 'b':
+                    # B = Speaker Amp Gain DOWN
+                    sg = min(SG_MAX, max(SG_MIN, sg - SG_STEP))
+                    dac.speaker_gain = sg
+                    print(f"sg = {sg:.1f} ({dac.speaker_gain})")
+                elif c == ' ':
+                    # Space = Toggle speaker amp enable/disable
+                    en = not dac.speaker_output
+                    dac.speaker_output = en
+                    print(f"speaker_output = {en}")
 
 
 main()
