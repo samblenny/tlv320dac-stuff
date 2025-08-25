@@ -12,6 +12,16 @@ bundle:
 	@mkdir -p build
 	python3 bundle_builder.py
 
+# This is for testing my PR for the Adafruit_CircuitPython_TLV320 library
+DRIVER_DIR=../Adafruit_CircuitPython_TLV320
+sync-tlv-test: bundle
+	xattr -cr build; \
+	rsync -rcvO 'build/${PROJECT_DIR}/CircuitPython 10.x/' /Volumes/CIRCUITPY; \
+	sync; \
+	rm /Volumes/CIRCUITPY/lib/adafruit_tlv320.mpy; \
+	cp -X ${DRIVER_DIR}/adafruit_tlv320.py /Volumes/CIRCUITPY/lib/; \
+	sync
+
 # Sync current code and libraries to CIRCUITPY drive.
 # This should work on macOS or Debian (see mount / umount targets below).
 sync: bundle
