@@ -104,7 +104,7 @@ def main():
                     dac.headphone_volume = hv
                     print(f"hv = {hv:.1f} ({dac.headphone_volume:.1f})")
                 elif c == 'x':
-                    # W = Headphone Volume DOWN
+                    # X = Headphone Volume DOWN
                     hv = min(HV_MAX, max(HV_MIN, hv - 1))
                     dac.headphone_volume = hv
                     print(f"hv = {hv:.1f} ({dac.headphone_volume:.1f})")
