@@ -2,8 +2,6 @@
 <!-- SPDX-FileCopyrightText: Copyright 2025 Sam Blenny -->
 # TLV320DAC Stuff
 
-**DRAFT: WORK IN PROGRESS**
-
 This is a scratch repo for notes and experiments to understand how volume
 control works on the TLV320DAC3100 I2S DAC used in the Adafruit Fruit Jam
 board.
